@@ -1,9 +1,6 @@
 #Check function is functions having syslog or printf in its name (logging Procedures)
 #Now finding lms string using backward traversal
 #Also do Peephole concretization
-#Taking too much time
-#Ask TA how to tackle extracting strings
-#Tommorrow morning
 import angr
 import claripy
 import pyvex
