@@ -20,6 +20,8 @@ def log_functions():
   for addr,func in entry_func:
     if "print" in func.name:
       check_func.add(addr)
+    elif 'syslog' in func.name:
+      check_func.add(addr)
     else:
       not_check_func.add(addr)
   return cfg,check_func,not_check_func
@@ -29,7 +31,7 @@ def foo(cfg,addr):
   try:
     entry_func = cfg.kb.functions[addr]
   except :
-    print("do something about it")
+    print("do nothing about it")
   else:
     try:
       temp_string = entry_func.string_references(vex_only=True)
