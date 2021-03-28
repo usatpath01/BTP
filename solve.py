@@ -30,13 +30,13 @@ def foo(cfg,addr):
   req_strings = []
   try:
     entry_func = cfg.kb.functions[addr]
-  except :
-    print("do nothing about it")
+  except Exception:
+    pass
   else:
     try:
       temp_string = entry_func.string_references(vex_only=True)
-    except:
-      print("")
+    except Exception:
+      pass
     else:
       for addr,string in temp_string:
         req_strings.append(string)
@@ -54,26 +54,6 @@ def extract_call_sites(cfg,check_func):
       for predecessors in predec:
         req_func.add(predecessors.addr)
   return req_func
-
-
-
-def check(cfg,address):
-  req_string = set()
-  try:
-    state = proj.factory.blank_state(addr = address)
-  except TypeError:
-    print("do nothing")
-  else: 
-    succ = state.step()
-    for st in succ.successors:
-      # print(st.addr)
-      addr = st.regs.rdi
-      bvv = state.memory.load(addr,14)
-      temp = state.solver.eval(bvv,cast_to=bytes)
-      if temp!=None and len(temp)>0:
-        req_string.add(temp)
-  return req_string
-
 
 def peephole(cfg,call_sites,max_back_trace):
   req_string = set()
@@ -106,116 +86,8 @@ def peephole(cfg,call_sites,max_back_trace):
 
   return req_string
 
-# def refere(cfg,add):
-#   for addr in check_func:
-#     entry_func = cfg.kb.functions[addr]
-#     try:
-#       temp = entry_func.string_references()
-#     except:
-#       print("hoho")
-#     else:
-#       print(temp)
-
-# def testing():
-#   state = proj.factory.entry_state()
-#   simgr = proj.factory.simulation_manager(state)
-#   simgr.explore(find =lambda s: len(s.posix.dumps(1))>0 )
-#   for st in simgr.found:
-#     print(st.posix.dumps(1))
-
-def printingxrefs(cfg,funct):
-   st = proj.factory.entry_state()
-   obj = cfg.kb.xrefs
-   for f in funct:
-    addr = obj.get_xrefs_by_ins_addr(f)
-    temp = st.memory.load(0x400520, 10)
-    ans = st.solver.eval(temp,cast_to=bytes)
-    print(addr)
-    print(ans)
-
-def hexescape(s):
-  '''
-  perform hex escaping on a raw string s
-  '''
-  out = []
-  acceptable = (string.ascii_letters + string.digits + " .%?").encode()
-  for c in s:
-      if c not in acceptable:
-          continue
-      else:
-          out.append(chr(c))
-
-  return ''.join(out)
-
-
-strcnt = itertools.count()
-
-def random(cfg):
-  state = proj.factory.blank_state()
-  string_references = []
-  for v in cfg._memory_data.values():
-      if v.sort == "string" and v.size > 1:
-          st = state.solver.eval(state.memory.load(v.address, v.size), cast_to=bytes)
-          string_references.append((v.address, st))
-
-  strings = [] if len(string_references) == 0 else list(list(zip(*string_references))[1])
-
-  valid_strings = []
-  if len(strings) > 0:
-      for s in strings:
-          if len(s) <= 128:
-              valid_strings.append(s)
-        
-  for s in set(valid_strings):
-      s_val = hexescape(s)
-      print("string_%d=\"%s\"" % (next(strcnt), s_val))
 
 st = proj.factory.entry_state()
-
-def testing_purposes(addr,cfg):
-  entry_func = cfg.kb.functions[addr]
-  bbs = entry_func.blocks
-  for bb_addr in bbs:
-    try:
-      ins_addr = bb_addr.instruction_addrs
-    except:
-      continue
-    else:
-      starting = min(ins_addr)
-      ending = max(ins_addr)
-      references = cfg.kb.xrefs
-      temp = references.get_xrefs_by_ins_addr_region(starting, ending)
-      tmp = list(temp)
-      for temptmp in tmp:
-        t = temptmp.memory_data
-        if t!=None and 'string' in t.sort and t.size>1:
-          req_addr = t.address
-          yeah = st.memory.load(req_addr,t.size-1)
-          print(st.solver.eval(yeah,cast_to=bytes))
-
-# def testing_purposes2(node,cfg):
-#   try:
-#     cfg_node = cfg.get_any_node(node.addr)
-#     ins_addr = cfg_node.instruction_addrs
-#   except:
-#     return ''
-#   else:
-#     if(len(ins_addr)>0):
-#       starting = min(ins_addr)
-#       ending = max(ins_addr)
-#       references = cfg.kb.xrefs
-#       temp = references.get_xrefs_by_ins_addr_region(starting, ending)
-#       tmp = list(temp)
-#       for temptmp in tmp:
-#         t = temptmp.memory_data
-#         if t!=None and 'string' in t.sort and t.size>1:
-#           req_addr = t.address
-#           yeah = st.memory.load(req_addr,t.size-1)
-#           temp_string = st.solver.eval(yeah,cast_to=bytes).decode("utf-8")
-#           if temp_string in req_strings:
-#             return temp_string
-#           return(st.solver.eval(yeah,cast_to=bytes))
-#   return ''
 
 def testing_purposes2(node,cfg):
   try:
@@ -250,26 +122,6 @@ visited = set()
 queue = []
 req_graph = {}
 
-# def get_predecessor_string(cfg,node,max_for_trace=15):
-#   cur_predecessor = node.predecessors
-#   predecessor = []
-#   for ele in cur_predecessor:
-#     predecessor.append([ele,1])
-#   strings = set()
-#   while(len(predecessor)!=0):
-#     predec,trace = predecessor.pop()
-#     have_string = testing_purposes2(predec,cfg)
-#     if len(have_string)>0 and have_string in req_strings:
-#       strings.add(have_string)
-#       if(len(predecessor)==0):
-#         break
-    
-#     elif trace<max_for_trace:
-#       pred_pred = predec.predecessors
-#       for ele in pred_pred:
-#         predecessor.append([ele,trace+1])
-#   return strings
-
 def get_predecessor_string2(cfg,node,G,entry,exits):
   node_vis = []
   cur_predecessor = list(G.predecessors(node))
@@ -302,9 +154,6 @@ def do_bfs(G,node,cfg,entry,exits):
   queue.append(node)
   while queue:
     s = queue.pop(0)
-    # have_string = testing_purposes2(s,cfg)
-    # if have_string not in req_graph and len(have_string)>1:
-    #   req_graph[have_string] = set()
     neighbours = list(G.successors(s))
     if neighbours!=None and len(neighbours)>0:
       for neighbour in neighbours:
@@ -323,53 +172,7 @@ def do_bfs(G,node,cfg,entry,exits):
                 req_graph[strin] = set()
               req_graph[strin].add(child_node)
 
-  # for exit_addr in exits:
-  #   exit_node = cfg.get_any_node(exit_addr)
-  #   exit_str = testing_purposes2(exit_node,cfg)
-  #   exit_node_str = (exit_addr,exit_str)
-  #   if exit_node_str not in req_graph:
-  #     req_graph[exit_node_str] = set()
-
   return req_graph
-
-# def do_bfs2(G,node,cfg):
-#   child_have_string = testing_purposes2(node,cfg)
-#   if len(child_have_string)>1:
-#     predecessor_strings = get_predecessor_string2(cfg,node,G)
-#     if predecessor_strings==None:
-#       return
-#     for strin in predecessor_strings:
-#       if strin not in req_graph:
-#         req_graph[strin] = set()
-#       req_graph[strin].add(child_have_string)
-#   return req_graph
-
-class GraphVisualization: 
-   
-    def __init__(self): 
-          
-        # visual is a list which stores all  
-        # the set of edges that constitutes a 
-        # graph 
-        self.visual = [] 
-          
-    # addEdge function inputs the vertices of an 
-    # edge and appends it to the visual list 
-    def addEdge(self, a, b): 
-        temp = [a, b] 
-        self.visual.append(temp) 
-          
-    # In visualize function G is an object of 
-    # class Graph given by networkx G.add_edges_from(visual) 
-    # creates a graph with a given list 
-    # nx.draw_networkx(G) - plots the graph 
-    # plt.show() - displays the graph 
-    def visualize(self): 
-        G = nx.Graph() 
-        G.add_edges_from(self.visual) 
-        nx.draw_networkx(G) 
-        plt.show() 
-
 
 def create_subgraph(G,cfg,entry,exits):
   visited.clear()
@@ -421,12 +224,6 @@ def build_lms_path(cfg,not_check_func):
     entry =  min(func_bbs)
     graph = entry_func._local_transition_graph
     subgraph_graph = create_subgraph(graph,cfg,entry,exits)
-
-    # if(len(subgraph_graph)>=0):
-    #   if func not in subgraph_dict:
-    #     exit_graph_tuple = (exits,subgraph_graph)
-    #     subgraph_dict[func] = exit_graph_tuple
-
     if(len(subgraph_graph)>0):
       exit_graph_tuple = (exits,subgraph_graph)
       subgraph_dict[entry_func.addr] = exit_graph_tuple
@@ -439,7 +236,6 @@ def connect_subgraph(subgraph_dict,cfg):
     exit_list = subgraph_dict[func_addr][0]
     subgraph = subgraph_dict[func_addr][1]
     subgraph_keys = list(subgraph.keys())
-    # print(subgraph)
     entry_func = cfg.kb.functions[func_addr]
     for exit_addr in exit_list:
       exit_cfg_node = cfg.get_any_node(exit_addr)
@@ -459,55 +255,12 @@ def connect_subgraph(subgraph_dict,cfg):
 
 
 
-
-# cfg,check_func = log_functions()
-# for addr in check_func:
-#   testing_purposes(addr,cfg)
-# random(cfg)
-cfg,check_func,not_check_func = log_functions()
-print(check_func)
-req_func = extract_call_sites(cfg,check_func)
-req_strings = peephole(cfg,req_func,3)
-build_lms_path(cfg,not_check_func)
-connect_subgraph(subgraph_dict,cfg)
-# connect_subgraph(subgraph_dict,cfg)
-# for func in check_func:
-#   entry_func = cfg.kb.functions[func]
-#   for bbs in entry_func.block_addrs:
-#     start_bbs = min(start_bbs,bbs)
-# print(req_strings)
-# for addr in not_check_func:
-#   testing_purposes(addr,cfg)
+cfg,check_func,not_check_func = log_functions() #Functions having log message strings
+# print(check_func)
+req_func = extract_call_sites(cfg,check_func) #Get parent functions 
+req_strings = peephole(cfg,req_func,3) #Use peephole to find all log message strings
+build_lms_path(cfg,not_check_func) #Building LMS Graph for each function
+connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentioned
 
 
-# temp = cfg.graph.nodes()
-# lst = []
-# for node in temp:
-#   do_bfs2(cfg,node)
-# print(req_graph)
-
-# G = cfg.graph
-# sub_G = G.__class__()
-# sub_G = create_subgraph(cfg,sub_G)
-# print(nx.to_dict_of_dicts(sub_G,list(sub_G.nodes)))
-# final_graph = convert_graph_to_dict(sub_G)
-# print(final_graph)
-
-
-# G = GraphVisualization()
-# for key in req_graph.keys():
-#   neighbours = req_graph[key]
-#   for neighbour in neighbours:
-#     G.addEdge(key,neighbour)
-
-# G.visualize()
-# print(req_graph)
-# printingxrefs(cfg,check_func)
-# req_func = extract_call_sites(cfg,check_func)
-# # print(req_func)
-# req_strings = peephole(cfg,check_func,3)
-# print(req_strings)
-# # print(foo(cfg,req_func))
-# for addr in check_func:
-#   print(foo(cfg,addr))
-# testing()
+# To do delete fake node and put all in one dictionary
