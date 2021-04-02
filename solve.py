@@ -230,12 +230,15 @@ def build_lms_path(cfg,not_check_func):
 
 
 #Check why nothing is entering in the if block
+new_subgraph = {}
+final_graph = {}
 def connect_subgraph(subgraph_dict,cfg):
   key_subgraph_dict = list(subgraph_dict.keys())
   for func_addr in subgraph_dict:
     exit_list = subgraph_dict[func_addr][0]
     subgraph = subgraph_dict[func_addr][1]
     subgraph_keys = list(subgraph.keys())
+    # print(subgraph)
     entry_func = cfg.kb.functions[func_addr]
     for exit_addr in exit_list:
       exit_cfg_node = cfg.get_any_node(exit_addr)
@@ -250,7 +253,34 @@ def connect_subgraph(subgraph_dict,cfg):
           succ_keys = list(subgraph_dict[exit_succ.addr][1].keys())
           for key in succ_keys:
             subgraph[exit_node].add(key)
-    print(subgraph)
+    # print(subgraph)
+    new_subgraph.update(subgraph)
+
+def find_predecessors(new_subgraph,del_node,successors):
+  if len(successors)>0:
+    for node in new_subgraph:
+      for ele in new_subgraph[node]:
+        if ele==del_node:
+          for succ in successors:
+            new_subgraph[ele].add(succ)
+
+def del_dummy_nodes(new_subgraph):
+  for node in new_subgraph:
+    addr,string = node
+    if len(string)==0:
+      successors = new_subgraph[node]
+      predecessors = find_predecessors(new_subgraph,node,successors)
+  for node in new_subgraph:
+    addr,string = node
+    if len(string)!=0:
+      final_graph[node] = new_subgraph[node]
+  for nodes in final_graph:
+    temp = final_graph[nodes].copy()
+    for node in temp:
+      addr,string = node
+      if(len(string)==0):
+        final_graph[nodes].remove(node)
+
 
 
 
@@ -261,6 +291,7 @@ req_func = extract_call_sites(cfg,check_func) #Get parent functions
 req_strings = peephole(cfg,req_func,3) #Use peephole to find all log message strings
 build_lms_path(cfg,not_check_func) #Building LMS Graph for each function
 connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentioned
-
-
 # To do delete fake node and put all in one dictionary
+del_dummy_nodes(new_subgraph)
+print(final_graph)
+
