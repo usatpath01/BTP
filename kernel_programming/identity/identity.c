@@ -13,11 +13,9 @@
 #include <linux/err.h>
 #include <linux/string.h>
 #include <linux/types.h>
-#include <linux/vmalloc.h>
-//
+#include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
-//
 
 static inline loff_t *file_ppos(struct file *file)
 {
@@ -58,8 +56,8 @@ SYSCALL_DEFINE3(identity, int, fd, char*, buf, size_t, count)
   	int pid = 0;
   	int sz_tempstr = 0;
   	char tempstr[100];
-  	// int size_tempbuff = 0;
-    // char *tempbuff = NULL;
+  	int size_tempbuff = 0;
+    char *tempbuff = NULL;
     int val1 = 0,val2 = 0,val = 0;
     int ok=0;
     mm_segment_t oldfs;
@@ -98,39 +96,36 @@ SYSCALL_DEFINE3(identity, int, fd, char*, buf, size_t, count)
 	      	if(sz_tempstr<0)
 	      		ok = 0;
 
-	      	// size_tempbuff = count+((sz_tempstr)*(sizeof(char)));
-	      	// tempbuff = (char*)(kmalloc(size_tempbuff+1,GFP_KERNEL));
+	      	size_tempbuff = count+((sz_tempstr)*(sizeof(char)));
+	      	tempbuff = (char*)(kmalloc(size_tempbuff+1,GFP_KERNEL));
 
-	      	// if(!tempbuff)
-	      	// 	ok = 0;
+	      	if(!tempbuff)
+	      		ok = 0;
 
 	    	if(ok)
 	    	{	
 	      		strlcpy(tempbuff,tempstr,size_tempbuff+1);
 	      		strlcat(tempbuff,buf,size_tempbuff+1);
 	      		
-	      		printk(KERN_ALERT "%d\n",sz_tempstr);
 	      		printk(KERN_ALERT "%s\n",tempstr);
-				
-	      		
-				return my_ksys_write(fd,tempstr,sz_tempstr);	      		
+				printk(KERN_ALERT "%s\n",tempbuff);
 
-	      		// oldfs = getfs();
-	      		// set_fs(KERNEL_DS);
-	      		// val = ksys_write(fd,tempstr,sz_tempstr);
-	      		// set_fs(oldfs);
-	      		// return val;
-	      		
-	      		// return ksys_write(fd, buf, count);
+				val =  my_ksys_write(fd,tempbuff,size_tempbuff);	      		
+				
+				kfree(tempbuff);
+				printk(KERN_ALERT "freed\n");
+				return val;
 	      	}
 
-	      
+	      	else
+	      	{	
+	      		kfree(tempbuff);
+	      		printk(KERN_ALERT "freed\n");
+	      	}
 	   	}
 	}
    
 	return ksys_write(fd, buf, count);
-
-    return 0;
 }
 
 
