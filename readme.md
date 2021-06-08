@@ -1,3 +1,5 @@
+Note : Use virtual machine or virtual box. Using ubuntu 18.04.
+
 # Kernel Installation #
 
 1. Fully update your operating system.
@@ -116,5 +118,6 @@ Note: First do testing on "identity" syscall before modifying write syscall
 
 3. Check write system call by writing a C-programm.
 
-Note: You have to add code in 
-'''SYSCALL_DEFINE3(write, unsigned int, fd, const char \_\_user *, buf, size_t, count)''' function in read_write.c to modify it furhter.
+Note1 : You have to add code in SYSCALL_DEFINE3(write, unsigned int, fd, const char `__user *`, buf, size_t, count) function in read_write.c to modify it furhter.
+
+Note2 : If the OS fails to reboot or is misbehaving. Open grub by pressing esc on boot, go to ```advanced options for ubuntu``` selection kernel version other than 5.8.1,modify the kernel code from inside it.
