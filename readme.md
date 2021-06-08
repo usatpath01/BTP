@@ -1,4 +1,4 @@
-#Kernel Installation
+# Kernel Installation #
 
 1. Fully update your operating system.
 ```
@@ -26,7 +26,7 @@ tar -xvf ~/linux-5.8.1.tar.xz -C ~/
 
 ```
 
-#CREATION
+# CREATION #
 
 1. Change your working directory to the root directory of the recently unpacked source code.
 ```
@@ -61,7 +61,7 @@ obj-y := identity.o
 8. Replace arch/x86/entry/syscalls/syscall_64.tbl in your system with syscall_64.tbl present in kernel_programming in git repo.
 
 
-#Installation
+# Installation #
 
 1. Configure the kernel
 ```
@@ -91,7 +91,7 @@ sudo make install ARCH=$(arch) -j$(nproc)
 
 6. Reboot the System
 
-#Checking
+# Checking #
 
 1. Make a directory named "apache2" in var/log directory
 
@@ -106,7 +106,7 @@ gcc test.c
 
 4. Check if date and pid are appended to the string in var/log/apache2/lol.txt in your system.
 
-#Replacing Write syscall
+# Replacing Write syscall #
 
 Note: First do testing on "identity" syscall before modifying write syscall
 
