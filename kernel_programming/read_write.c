@@ -645,25 +645,6 @@ ssize_t ksys_write(unsigned int fd, const char __user *buf, size_t count)
 	return ret;
 }
 
-static inline ssize_t my_ksys_write(unsigned int fd, const char __user *buf, size_t count)
-{
-	struct fd f = fdget_pos(fd);
-	ssize_t ret = -EBADF;
-
-	if (f.file) {
-		loff_t pos, *ppos = file_ppos(f.file);
-		if (ppos) {
-			pos = *ppos;
-			ppos = &pos;
-		}
-		ret = kernel_write(f.file, buf, count,ppos);
-		if (ret >= 0 && ppos)
-			f.file->f_pos = pos;
-		fdput_pos(f);
-	}
-
-	return ret;
-}
 
 SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 		size_t, count)
@@ -673,90 +654,145 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
   	struct fd get_file_pointer;
 	
 	struct dentry *parent = NULL;
-	int safe = 4,var_flag=0,log_flag=0,apache2_flag=0;
+	int safe = 6,var_flag=0,log_flag=0,apache2_flag=0;
 	char var_cmp[] = "var";
 	char log_cmp[] = "log";
 	char apache2_cmp[] = "apache2";
+	int var_level = 0;
+	int log_level = 0;
+	int level = 0;
+
     long long totalsecs = 0;
   	int pid = 0;
   	int sz_tempstr = 0;
-  	char tempstr[100];
+  	char *tempstr = NULL;
   	int size_tempbuff = 0;
-    char *tempbuff = NULL;
-    int val = 0;
+    char *tempbuff = NULL,*kern_buf = NULL;
+    int ret = 0,cpy = 0;
     int ok=0;
+    loff_t pos, *ppos;
     
     if (unlikely(!access_ok(buf, count)))
 		return -EFAULT;
 
-    get_file_pointer = fdget_pos(fd);
-    if(get_file_pointer.file)
-    {	
-    	get_file = get_file_pointer.file;
-    
-	    if(get_file && get_file->f_path.dentry!=NULL)
-		{   
+	kern_buf = (char*)(kmalloc(count+1,GFP_KERNEL));
 
-		    parent = get_file->f_path.dentry->d_parent;
-		  	
+	if(!kern_buf)
+		return -EFAULT;
 
-		    while(safe-- && parent!=NULL)
-		    {
-		    	if(strcmp(parent->d_name.name,var_cmp)==0)
-		    		var_flag = 1;
+	cpy = copy_from_user(kern_buf,buf,count);
+	if(cpy!=0)
+		return -EFAULT;
+	kern_buf[count] = '\0';	
+	    get_file_pointer = fdget_pos(fd);
+	    if(get_file_pointer.file)
+	    {	
+	    	get_file = get_file_pointer.file;	    
+		    if(get_file && get_file->f_path.dentry!=NULL)
+			{   
+			    parent = get_file->f_path.dentry->d_parent;
+			    while(safe-- && parent!=NULL)
+			    {
+			    	if(strcmp(parent->d_name.name,var_cmp)==0)
+			    	{	
 
-		    	if(strcmp(parent->d_name.name,log_cmp)==0)
-		    		log_flag = 1;
+			    		var_flag = 1;
+			    		var_level = level;
+			    	}
 
-		    	if(strcmp(parent->d_name.name,apache2_cmp)==0)
-		    		apache2_flag = 1;
+			    	if(strcmp(parent->d_name.name,log_cmp)==0)
+			    	{	
+			    		log_flag = 1;
+			    		log_level = level;
+			    	}
 
-		    	if(strcmp(parent->d_name.name,"/")==0)
-		    		break;
-		    	parent = parent->d_parent;
-		    }
+			    	if(strcmp(parent->d_name.name,apache2_cmp)==0)
+			    		apache2_flag = 1;
+			    	
+			    	level++;
 
-		   	if(var_flag && log_flag && apache2_flag)
-		   	{
-		   		ok = 1;
-		   		totalsecs = ktime_get_real_seconds();
-				pid = task_tgid_vnr(current);
-				time64_to_tm(totalsecs,0,&result);
-		      	sz_tempstr = snprintf(tempstr, sizeof(tempstr), " pid = %d, date = [%ld/%d/%d %d:%d:%d] "
-		      	,pid,result.tm_year+1900,result.tm_mon+1,result.tm_mday
-		      	,result.tm_hour,result.tm_min,result.tm_sec); 
+			    	if(strcmp(parent->d_name.name,"/")==0)
+			    		break;
 
-		      	if(sz_tempstr<0)
-		      		ok = 0;
+			    	parent = parent->d_parent;
+			    }
 
-		      	size_tempbuff = count+((sz_tempstr)*(sizeof(char)));
-		      	tempbuff = (char*)(kmalloc(size_tempbuff+1,GFP_KERNEL));
+			   	if(var_flag && log_flag && apache2_flag && log_level>=1 && var_level>=2)
+			   	{
+			   		// printk(KERN_INFO "inside var_flag and log_flag and apache2_flag\n");
+			   		ok = 1;
+			   		totalsecs = ktime_get_real_seconds();
+					pid = task_tgid_vnr(current);
+					time64_to_tm(totalsecs,0,&result);
 
-		      	if(!tempbuff)
-		      		ok = 0;
+					tempstr = (char*)(kmalloc(100*sizeof(char),GFP_KERNEL));
+					if(!tempstr)
+						ok = 0;
 
-		    	if(ok)
-		    	{	
-		      		strlcpy(tempbuff,tempstr,size_tempbuff+1);
-		      		strlcat(tempbuff,buf,size_tempbuff+1);
-		      		
-					val = my_ksys_write(fd,tempbuff,size_tempbuff);	      		
-					
-					kfree(tempbuff);
-					
-					return val;
-		      	}
+					// printk(KERN_INFO "After mallocking tempstr\n");
+					if(ok)
+					{
+				      	sz_tempstr = snprintf(tempstr,100*sizeof(char), "pid = %d, date = [%ld/%d/%d %d:%d:%d] "
+				      	,pid,result.tm_year+1900,result.tm_mon+1,result.tm_mday
+				      	,result.tm_hour,result.tm_min,result.tm_sec); 
 
-		      	else
-		      	{	
-		      		kfree(tempbuff);
-		      	}
-		   	}
+				      	if(sz_tempstr<0)
+				      		ok = 0;
+
+				      	size_tempbuff = count+((sz_tempstr)*(sizeof(char)));
+				      	tempbuff = (char*)(kmalloc(size_tempbuff+100,GFP_KERNEL));
+
+				      	// printk(KERN_INFO "After mallocking tempbuff\n");
+
+				      	if(!tempbuff)
+				      		ok = 0;
+
+				    	if(ok)
+				    	{	
+				    		// printk(KERN_INFO "for stringcpty and stringcat\n");
+				      		
+				      		strlcpy(tempbuff,tempstr,size_tempbuff+100);
+				      		// printk(KERN_ALERT "tempbuff = %s \n",tempbuff);
+				      		strlcat(tempbuff,kern_buf,size_tempbuff+100);
+				      		
+				      		// printk(KERN_ALERT "tempbuff = %s \n",tempbuff);
+				      		// printk(KERN_ALERT "tempstr = %s \n",tempstr);
+				      		// printk(KERN_ALERT "kern_buf = %s \n",kern_buf);
+				      		
+				      		ppos = file_ppos(get_file);
+							if (ppos) 
+							{
+								pos = *ppos;
+								ppos = &pos;
+							}
+
+							ret = kernel_write(get_file, tempbuff, size_tempbuff,ppos);
+							
+							if (ret >= 0 && ppos)
+							{	
+								get_file->f_pos = pos;
+								kfree(tempbuff);
+								kfree(tempstr);
+								kfree(kern_buf);
+								fdput_pos(get_file_pointer);
+								return ret;
+							}
+
+							// printk(KERN_INFO "after freeing mallocs\n");
+
+				      	}
+      	
+				      	kfree(tempbuff);		
+				    }
+				    kfree(tempstr);
+			   	}
+			}
+			fdput_pos(get_file_pointer);
 		}
-		fdput_pos(get_file_pointer);
-	}
 	
-   	
+
+   	kfree(kern_buf);
+
 	return ksys_write(fd, buf, count);
 }
 
