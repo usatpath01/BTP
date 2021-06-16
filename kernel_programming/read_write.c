@@ -27,6 +27,7 @@
 #include <linux/ktime.h>
 #include <linux/timekeeping.h>
 #include <linux/string.h>
+#include <linux/vmalloc.h>
 //
 #include "internal.h"
 
@@ -674,7 +675,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
     int ok=0;
     loff_t pos, *ppos = NULL;
 
-	kern_buf = (char*)(kmalloc(count+1,GFP_KERNEL));
+	kern_buf = (char*)(vmalloc(count+1));
 
 	if(!kern_buf)
 	{
@@ -764,7 +765,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 				      		ok = 0;
 
 				      	size_tempbuff = count+((sz_tempstr)*(sizeof(char)));
-				      	tempbuff = (char*)(kmalloc(size_tempbuff+100,GFP_KERNEL));
+				      	tempbuff = (char*)(vmalloc(size_tempbuff+100));
 
 				      	printk(KERN_INFO "After mallocking tempbuff\n");
 
@@ -795,9 +796,9 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 							if (ret >= 0 && ppos)
 							{	
 								get_file->f_pos = pos;
-								kfree(tempbuff);
+								vfree(tempbuff);
 								kfree(tempstr);
-								kfree(kern_buf);
+								vfree(kern_buf);
 								fdput_pos(get_file_pointer);
 								return ret;
 							}
@@ -806,7 +807,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 
 				      	}
       	
-				      	kfree(tempbuff);		
+				      	vfree(tempbuff);		
 				    }
 				    kfree(tempstr);
 			   	}
@@ -816,7 +817,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 		}
 	
 
-   	kfree(kern_buf);
+   	vfree(kern_buf);
 
 	return ksys_write(fd, buf, count);
 }
