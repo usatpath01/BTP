@@ -654,10 +654,12 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
   	struct fd get_file_pointer;
 	
 	struct dentry *parent = NULL;
-	int safe = 6,var_flag=0,log_flag=0,apache2_flag=0;
+	int safe = 6,var_flag = 0,log_flag = 0,journal_flag = 0,unattended_flag = 0,installer_flag = 0;
 	char var_cmp[] = "var";
 	char log_cmp[] = "log";
-	char apache2_cmp[] = "apache2";
+	char journal_cmp[] = "journal";
+	char unattended_cmp[] = "unattended-upgrades";
+	char installer_cmp[] = "installer";
 	int var_level = 0;
 	int log_level = 0;
 	int level = 0;
@@ -670,19 +672,23 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
     char *tempbuff = NULL,*kern_buf = NULL;
     int ret = 0,cpy = 0;
     int ok=0;
-    loff_t pos, *ppos;
-    
-    if (unlikely(!access_ok(buf, count)))
-		return -EFAULT;
+    loff_t pos, *ppos = NULL;
 
 	kern_buf = (char*)(kmalloc(count+1,GFP_KERNEL));
 
 	if(!kern_buf)
+	{
+		printk(KERN_INFO "Error in making kern_buf\n");
 		return -EFAULT;
+	}
 
 	cpy = copy_from_user(kern_buf,buf,count);
 	if(cpy!=0)
+	{
+		printk(KERN_INFO "Copy from user error\n");
 		return -EFAULT;
+	}
+
 	kern_buf[count] = '\0';	
 	    get_file_pointer = fdget_pos(fd);
 	    if(get_file_pointer.file)
@@ -698,6 +704,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 
 			    		var_flag = 1;
 			    		var_level = level;
+			    		break;
 			    	}
 
 			    	if(strcmp(parent->d_name.name,log_cmp)==0)
@@ -706,8 +713,24 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 			    		log_level = level;
 			    	}
 
-			    	if(strcmp(parent->d_name.name,apache2_cmp)==0)
-			    		apache2_flag = 1;
+			    	if(strcmp(parent->d_name.name,journal_cmp)==0)
+			    	{	
+			    		journal_flag = 1;
+			    		break;
+			    	}
+
+
+			    	if(strcmp(parent->d_name.name,installer_cmp)==0)
+			    	{	
+			    		installer_flag = 1;
+			    		break;
+			    	}
+
+			    	if(strcmp(parent->d_name.name,unattended_cmp)==0)
+			    	{	
+			    		unattended_flag = 1;
+			    		break;
+			    	}
 			    	
 			    	level++;
 
@@ -717,9 +740,10 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 			    	parent = parent->d_parent;
 			    }
 
-			   	if(var_flag && log_flag && apache2_flag && log_level>=1 && var_level>=2)
+			   	if(var_flag && log_flag && !journal_flag && !installer_flag
+			   	 && !unattended_flag && log_level>=1 && var_level>=2)
 			   	{
-			   		// printk(KERN_INFO "inside var_flag and log_flag and apache2_flag\n");
+			   		printk(KERN_INFO "inside var_flag and log_flag and apache2_flag\n");
 			   		ok = 1;
 			   		totalsecs = ktime_get_real_seconds();
 					pid = task_tgid_vnr(current);
@@ -729,7 +753,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 					if(!tempstr)
 						ok = 0;
 
-					// printk(KERN_INFO "After mallocking tempstr\n");
+					printk(KERN_INFO "After mallocking tempstr\n");
 					if(ok)
 					{
 				      	sz_tempstr = snprintf(tempstr,100*sizeof(char), "pid = %d, date = [%ld/%d/%d %d:%d:%d] "
@@ -742,22 +766,22 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 				      	size_tempbuff = count+((sz_tempstr)*(sizeof(char)));
 				      	tempbuff = (char*)(kmalloc(size_tempbuff+100,GFP_KERNEL));
 
-				      	// printk(KERN_INFO "After mallocking tempbuff\n");
+				      	printk(KERN_INFO "After mallocking tempbuff\n");
 
 				      	if(!tempbuff)
 				      		ok = 0;
 
 				    	if(ok)
 				    	{	
-				    		// printk(KERN_INFO "for stringcpty and stringcat\n");
+				    		printk(KERN_INFO "for stringcpty and stringcat\n");
 				      		
 				      		strlcpy(tempbuff,tempstr,size_tempbuff+100);
-				      		// printk(KERN_ALERT "tempbuff = %s \n",tempbuff);
+				      		printk(KERN_ALERT "tempbuff = %s \n",tempbuff);
 				      		strlcat(tempbuff,kern_buf,size_tempbuff+100);
 				      		
-				      		// printk(KERN_ALERT "tempbuff = %s \n",tempbuff);
-				      		// printk(KERN_ALERT "tempstr = %s \n",tempstr);
-				      		// printk(KERN_ALERT "kern_buf = %s \n",kern_buf);
+				      		printk(KERN_ALERT "tempbuff = %s \n",tempbuff);
+				      		printk(KERN_ALERT "tempstr = %s \n",tempstr);
+				      		printk(KERN_ALERT "kern_buf = %s \n",kern_buf);
 				      		
 				      		ppos = file_ppos(get_file);
 							if (ppos) 
@@ -778,7 +802,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 								return ret;
 							}
 
-							// printk(KERN_INFO "after freeing mallocs\n");
+							printk(KERN_INFO "after freeing mallocs\n");
 
 				      	}
       	
@@ -787,6 +811,7 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 				    kfree(tempstr);
 			   	}
 			}
+			
 			fdput_pos(get_file_pointer);
 		}
 	
@@ -2450,3 +2475,4 @@ next_loop:
 	return ret;
 }
 EXPORT_SYMBOL(vfs_dedupe_file_range);
+
