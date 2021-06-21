@@ -14,12 +14,13 @@ def run_fast_scandir(dir,files):
 			files.append(f.path)
 
 ##Remember to change it to the /var/log/
-path_file = os.getcwd()+"/"
+path_file = "/var/log"+"/"
 output_file_name = "universal_log_file.txt"
 input_file_name = sys.argv[1]
 
 subfolders = [f.name for f in os.scandir(path_file)
 if f.is_dir()]
+
 
 ##Taking names of applications from input.txt
 req_app = []
@@ -31,15 +32,12 @@ with open(input_file_name,"r") as fp:
 ##finding all files inside the subdirectories
 files = []
 for x in subfolders:
-	if x=="journal" or x=="unattended-upgrades" or x=="installer":
-		subfolders.remove(x)
-	elif x in req_app:
-		run_fast_scandir(x,files)
+	if x in req_app:
+		run_fast_scandir(path_file+x,files)
 
 ##handle .gzip file and merging all files
 with open(output_file_name,"wb") as outfile:
 	for file in files:
-		print(file.split("/")[-1])
 		if ".gz" in file.split("/")[-1]:
 			with gzip.open(file,'rb') as f_in:
 				shutil.copyfileobj(f_in,outfile)
@@ -50,4 +48,4 @@ with open(output_file_name,"wb") as outfile:
 
 
 ## Ran command to sort the file from the bash
-cp = subprocess.run(["sort -k 6 -k 7 universal_log_file.txt -o universal_log_file.txt"], check=True,shell=True)
+cp = subprocess.run(["sort -k 6 universal_log_file.txt -o universal_log_file.txt"], check=True,shell=True)

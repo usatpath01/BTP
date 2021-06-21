@@ -746,9 +746,9 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 		   	 && !unattended_flag && log_level>=1 && var_level>=2)
 		   	{
 		   		ok = 1;
-		   		totalsecs = ktime_get_real_seconds();
+		   		totalsecs = ktime_get_real_ns();
 				pid = task_tgid_vnr(current);
-				time64_to_tm(totalsecs,0,&result);
+				// time64_to_tm(totalsecs,0,&result);
 
 				tempstr = (char*)(kmalloc(100*sizeof(char),GFP_KERNEL));
 				if(!tempstr)
@@ -756,9 +756,8 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
 
 				if(ok)
 				{
-			      	sz_tempstr = snprintf(tempstr,100*sizeof(char), "pid = %d, date = [%ld/%d/%d %d:%d:%d] "
-			      	,pid,result.tm_year+1900,result.tm_mon+1,result.tm_mday
-			      	,result.tm_hour,result.tm_min,result.tm_sec); 
+			      	sz_tempstr = snprintf(tempstr,100*sizeof(char), "pid = %d, date = [%lld] "
+			      	,pid,totalsecs); 
 
 			      	if(sz_tempstr<0)
 			      		ok = 0;
