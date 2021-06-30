@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from angrutils import *
 
 
-proj = angr.Project("skod",load_options={'auto_load_libs':False})
+proj = angr.Project("./a.out",load_options={'auto_load_libs':False})
 
 def log_functions():
   check_func = set()
