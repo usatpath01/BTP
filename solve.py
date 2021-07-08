@@ -18,9 +18,10 @@ def log_functions():
   cfg  = proj.analyses.CFGFast(normalize = True,resolve_indirect_jumps = True,data_references=True,cross_references=True)
   entry_func = cfg.kb.functions.items()
   for addr,func in entry_func:
-    if "print" in func.name:
+    print(str(addr)+" "+ func.name)
+    if "printf" in func.name:
       check_func.add(addr)
-    elif 'syslog' in func.name:
+    elif "syslog" in func.name:
       check_func.add(addr)
     else:
       not_check_func.add(addr)
@@ -64,6 +65,7 @@ def peephole(cfg,call_sites,max_back_trace):
     iter_list,back_trace = set_call.pop()
     for addr in iter_list:
       l = foo(cfg,addr)
+      # print(l)
       if len(l)!=0:
         for strings in l:
           req_string.add(strings)
@@ -96,7 +98,7 @@ def testing_purposes2(node,cfg):
   except:
     return ''
   else:
-    if(len(ins_addr)>0):
+    if(len(ins_addr)>0) and node.addr not in loops_not_have_syscall:
       starting = min(ins_addr)
       ending = max(ins_addr)
       references = cfg.kb.xrefs
@@ -121,6 +123,10 @@ def testing_purposes2(node,cfg):
 visited = set()
 queue = []
 req_graph = {}
+loops_not_have_syscall = []
+syscall_list = ["clone", "close", "creat", "dup", "dup2", "dup3", "execve",
+"exit", "exit group", "fork", "open", "openat", "rename", "renameat", "unlink",
+"unlinkat", "vfork", "connect", "accept", "accept4", "bind"]
 
 def get_predecessor_string2(cfg,node,G,entry,exits):
   node_vis = []
@@ -282,16 +288,43 @@ def del_dummy_nodes(new_subgraph):
         final_graph[nodes].remove(node)
 
 
+def find_loops(cfg,functions):
+  function_list = []
+  for function in functions:
+    function_list.append(cfg.kb.functions[function])
+  loop_object = proj.analyses.LoopFinder(functions = function_list)
+  loops_list = loop_object.loops
+  
+  for loop in loops_list:
+    flag = 0
+    for nodes in loop.body_nodes:
+      block = cfg.get_any_node(nodes.addr)
+      irsb = proj.factory.block(nodes.addr).vex
+      if irsb.jumpkind == "Ijk_Call":
+        for node in block.successors:
+          try:
+            func = cfg.kb.functions[node.addr]
+          except:
+            print("function not found at this "+str(node.addr))
+            pass
+          else:
+            if func.name in syscall_list:
+              flag = 1
 
+      elif "Ijk_Sys" in irsb.jumpkind:
+        flag = 1
 
+    if flag == 0:
+      for nodes in loop.body_nodes:
+        loops_not_have_syscall.append(nodes.addr)
 
 cfg,check_func,not_check_func = log_functions() #Functions having log message strings
-# print(check_func)
 req_func = extract_call_sites(cfg,check_func) #Get parent functions 
 req_strings = peephole(cfg,req_func,3) #Use peephole to find all log message strings
+find_loops(cfg, not_check_func)
 build_lms_path(cfg,not_check_func) #Building LMS Graph for each function
 connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentioned
-# To do delete fake node and put all in one dictionary
-del_dummy_nodes(new_subgraph)
+del_dummy_nodes(new_subgraph) # To do delete fake node and put all in one dictionary
 print(final_graph)
+
 
