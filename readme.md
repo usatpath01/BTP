@@ -78,6 +78,15 @@ Note : Only need to do this step one time only. No need to redo while compiling 
 ```
 make ARCH=$(arch) -j$(nproc)
 ```
+Note: In case you face error while doing the Step or Step 3 and the error shows  
+```
+No rule to make target 'debian/canonical-certs.pem', needed by 'certs/x509_certificate_list'.
+```
+
+Run the following command:
+```
+scripts/config --disable SYSTEM_TRUSTED_KEYS
+```
 
 3. Prepare the installer of the kernel
 ```
