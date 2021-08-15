@@ -122,9 +122,33 @@ req_graph = {}
 loops_not_have_syscall = []
 loop_starting = {}
 loop_ending = {}
-syscall_list = ["clone", "close", "creat", "dup", "dup2", "dup3", "execve",
-"exit", "exit group", "fork", "open", "openat", "rename", "renameat", "unlink",
-"unlinkat", "vfork", "connect", "accept", "accept4", "bind"]
+# syscall_list = ["clone", "close", "creat", "dup", "dup2", "dup3", "execve",
+# "exit", "exit group", "fork", "open", "openat", "rename", "renameat", "unlink",
+# "unlinkat", "vfork", "connect", "accept", "accept4", "bind"]
+
+syscall_list = {"clone":["clone","clone2","clone3"],
+"close":["close", "fclose", "fcloseall", "pclose", "closedir", "closefrom", "closelog", "close_range"],
+"creat":["creat","creat64"],
+"dup":["dup","fcntl"],
+"dup2":["dup2"],
+"dup3":["dup3"],
+"execve":["execl","execle","execlp","execv","execve","execvp","fexecve"],
+"exit":["_exit","_Exit","atexit","exit","on_exit","thrd_exit"],
+"exit_group":["exit_group"],
+"fork":["fork","vfork","_Fork"],
+"open":["catopen", "dirfd", "fdopen", "fdopendir", "fopen", "fopen64", "open", "open64", "opendir", "openlog"],
+"openat":["openat"],
+"rename":["rename"],
+"renameat":["renameat"],
+"unlink":["unlink"],
+"unlinkat":["unlinkat"],
+"vfork":["vfork"],
+"connect":["connect"],
+"accept":["accept"],
+"accept4":["accept4"],
+"bind":["bind"]
+}
+
 
 def get_predecessor_string2(cfg,node,G,entry,exits):
   node_vis = []
@@ -327,10 +351,13 @@ def find_loops(cfg,functions):
             print("function not found at this "+str(node.addr))
           else:
             function_names = get_syscall_function_name(func)
-            if function_names and func.name in function_names:
-              flag = 1
+            for name in function_names:
+              for syscall in syscall_list:
+                if name in syscall_list[syscall]:
+                  flag = 1
 
       elif "Ijk_Sys" in irsb.jumpkind:
+        print("do something here")
         flag = 1
 
     if flag == 0:
@@ -365,15 +392,17 @@ def find_loops(cfg,functions):
               print("function not found at this "+str(node.addr))
               pass
             else:
-              if func.name in syscall_list:
-                syscalls_made.append(func.name)
-                flag = 1
+              function_names = get_syscall_function_name(func)
+              for name in function_names:
+                for syscall in syscall_list:
+                  if name in syscall_list[syscall]:
+                    syscalls_made.append(syscall)
+                    flag = 1
 
         # elif "Ijk_Sys" in irsb.jumpkind:
         #   flag = 1
 
         if flag == 1:
-          
           if nodes.addr<=min_block_addr:
             for syscall_name in syscalls_made:
               starting_syscall.append(syscall_name)
@@ -385,22 +414,22 @@ def find_loops(cfg,functions):
       start_lms_string = extract_strings(cfg.get_any_node(min_block_addr), cfg)
       end_lms_string = extract_strings(cfg.get_any_node(max_block_addr), cfg)
 
-      loop_starting[(start_lms_string,min_block_addr)] = starting_syscall
-      loop_ending[(end_lms_string,min_block_addr)] = ending_syscall
+      loop_starting[(min_block_addr,start_lms_string)] = starting_syscall
+      loop_ending[(max_block_addr,end_lms_string)] = ending_syscall
 
   print(loop_starting)
   print(loop_ending)
 
-
+def convert_to_networkx(graph):
+  G = nx.Graph(graph)
 
 cfg,check_func,not_check_func = log_functions() #Functions having log message strings
 req_func = extract_call_sites(cfg,check_func) #Get parent functions 
 req_strings = peephole(cfg,req_func,3) #Use peephole to find all log message strings
-# print(req_strings)
-find_loops(cfg, not_check_func)
+find_loops(cfg, not_check_func) #Function to find starting and ending lms and syscall after ending lms or before starting lms
 build_lms_path(cfg,not_check_func) #Building LMS Graph for each function
 connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentioned
 del_dummy_nodes(new_subgraph) # To do delete fake node and put all in one dictionary
-# print(final_graph)
-
+convert_to_networkx(final_graph)
+print(final_graph)
 
