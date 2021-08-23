@@ -3,14 +3,19 @@ import claripy
 import sys
 import pickle
 import pyvex
+import re
+from re import search
+import pprint
 import string
 import itertools
 import networkx as nx
 import matplotlib.pyplot as plt
+import json
+from networkx.readwrite import json_graph
 from angrutils import *
 
 
-proj = angr.Project("./a.out",load_options={'auto_load_libs':False})
+proj = angr.Project("apache2",load_options={'auto_load_libs':False})
 
 def log_functions():
   check_func = set()
@@ -122,9 +127,6 @@ req_graph = {}
 loops_not_have_syscall = []
 loop_starting = {}
 loop_ending = {}
-# syscall_list = ["clone", "close", "creat", "dup", "dup2", "dup3", "execve",
-# "exit", "exit group", "fork", "open", "openat", "rename", "renameat", "unlink",
-# "unlinkat", "vfork", "connect", "accept", "accept4", "bind"]
 
 syscall_list = {"clone":["clone","clone2","clone3"],
 "close":["close", "fclose", "fcloseall", "pclose", "closedir", "closefrom", "closelog", "close_range"],
@@ -356,9 +358,9 @@ def find_loops(cfg,functions):
                 if name in syscall_list[syscall]:
                   flag = 1
 
-      elif "Ijk_Sys" in irsb.jumpkind:
-        print("do something here")
-        flag = 1
+      # elif "Ijk_Sys" in irsb.jumpkind:
+      #   print("do something here")
+      #   flag = 1
 
     if flag == 0:
       for nodes in loop.body_nodes:
@@ -402,11 +404,14 @@ def find_loops(cfg,functions):
         # elif "Ijk_Sys" in irsb.jumpkind:
         #   flag = 1
 
+        #min block addr is having address of starting lms
+        #node.addr is the address of a syscall 
         if flag == 1:
           if nodes.addr<=min_block_addr:
             for syscall_name in syscalls_made:
               starting_syscall.append(syscall_name)
 
+        #max_block_addr is having address of the ending lms
           if nodes.addr>=max_block_addr:
             for syscall_name in syscalls_made:
               ending_syscall.append(syscall_name)
@@ -417,11 +422,223 @@ def find_loops(cfg,functions):
       loop_starting[(min_block_addr,start_lms_string)] = starting_syscall
       loop_ending[(max_block_addr,end_lms_string)] = ending_syscall
 
-  print(loop_starting)
-  print(loop_ending)
+  # print(loop_starting)
+  # print(loop_ending)
 
-def convert_to_networkx(graph):
-  G = nx.Graph(graph)
+def build_regex_from_lms(i):
+    given_string = i
+    given_string = given_string.strip()
+
+    testing = "(%(?:[0-9]*[.][0-9]+)s)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%s", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)d)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%d", given_string)
+
+    
+    testing = "(%(?:[0-9]+)d)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%d", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)l)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%l", given_string)
+
+    
+    testing = "(%(?:[0-9]+)l)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%l", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)h)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%h", given_string)
+
+    
+    testing = "(%(?:[0-9]+)h)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%h", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)u)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%u", given_string)
+
+    
+    testing = "(%(?:[0-9]+)u)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%u", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)f)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%f", given_string)
+
+    
+    testing = "(%(?:[0-9]+)f)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%f", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)L)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%L", given_string)
+
+    
+    testing = "(%(?:[0-9]+)L)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%L", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)p)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%p", given_string)
+
+    
+    testing = "(%(?:[0-9]+)p)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%p", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)i)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%i", given_string)
+
+    
+    testing = "(%(?:[0-9]+)i)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%i", given_string)
+
+    testing = "(%(?:[0-9]*[.][0-9]+)x)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%x", given_string)
+
+    
+    testing = "(%(?:[0-9]+)X)"
+    expressions = re.findall(testing,given_string)
+    for exp in expressions:
+        given_string = re.sub(exp, "%X", given_string)
+
+    given_string = given_string.translate(str.maketrans({"+":  r"\+",
+                                          "]": r"\]",
+                                          "[": r"\[",
+                                          "(": r"\(",
+                                          ")": r"\)",
+                                          "{": r"\{",
+                                          "}": r"\}",
+                                          "|": r"\|",
+                                          "\\": r"\\",
+                                          "^":  r"\^",
+                                          "$":  r"\$",
+                                          "*":  r"\*",
+                                          ".":  r"\."}))
+
+
+    given_string = re.sub("%c", ".", given_string)
+    given_string = re.sub("%s", ".*", given_string)
+    given_string = re.sub("%m", ".*", given_string)
+    given_string = re.sub("%M", ".*", given_string)
+    
+    #ADD %0i
+    regex_for_oct = "[-+]?[0-7]+"
+    given_string = re.sub("%o", regex_for_oct, given_string)
+
+     #ADD %0i
+    regex_for_pos_int = "[0-9]+"
+    given_string = re.sub("%hu", regex_for_pos_int, given_string)
+    given_string = re.sub("%lu", regex_for_pos_int, given_string)
+    given_string = re.sub("%llu", regex_for_pos_int, given_string)
+    given_string = re.sub("%u", regex_for_pos_int, given_string)
+
+    #ADD %0.0 something
+    regex_for_float_double = "[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)"
+    given_string = re.sub("%f", regex_for_float_double, given_string)
+    given_string = re.sub("%lf", regex_for_float_double, given_string)
+    given_string = re.sub("%Lf", regex_for_float_double, given_string)
+
+    # regex_for_address = ""
+    regex_for_address = "(0x|0X)?[0-9a-f]{8}/i"
+    given_string = re.sub("%p", regex_for_address, given_string)
+
+    regex_for_hexadeciaml = "(0x)?[0-9a-f]{8}/i"
+    given_string = re.sub("%x", regex_for_hexadeciaml, given_string)
+    given_string = re.sub("%lx", regex_for_hexadeciaml, given_string)
+    given_string = re.sub("%X", regex_for_hexadeciaml, given_string)
+
+    #ADD %0i
+    regex_for_int = "-?[0-9]+"
+    given_string = re.sub("%hd", regex_for_int, given_string)
+    given_string = re.sub("%hi", regex_for_int, given_string)
+    given_string = re.sub("%i", regex_for_int, given_string)
+    given_string = re.sub("%d", regex_for_int, given_string)
+    given_string = re.sub("%ld", regex_for_int, given_string)
+    given_string = re.sub("%li", regex_for_int, given_string)
+    given_string = re.sub("%lld", regex_for_int, given_string)
+    given_string = re.sub("%lli", regex_for_int, given_string)
+    given_string = re.sub("%l", regex_for_int, given_string)
+
+    return given_string
+
+
+def convert_graph_to_regex():
+
+  regex_graph = {}
+  regex_loop_starting = {}
+  regex_loop_ending = {}
+
+  for node in final_graph:
+    new_node = (node[0],build_regex_from_lms(node[1]))
+    regex_graph[new_node] = set()
+    for edge in final_graph[node]:
+      new_edge = (edge[0],build_regex_from_lms(edge[1]))
+      regex_graph[new_node].add(new_edge)
+
+  for node in loop_starting:
+    new_node = (node[0],build_regex_from_lms(node[1]))
+    regex_loop_starting[new_node] = loop_starting[node]
+
+  for node in loop_ending:
+    new_node = (node[0],build_regex_from_lms(node[1]))
+    regex_loop_ending[new_node] = loop_ending[node]
+
+  
+
+
+  return regex_graph,regex_loop_starting,regex_loop_ending
+
+def convert_to_networkx(graph,regex_loop_starting,regex_loop_ending):
+  G = nx.DiGraph(graph)
+  for node in G.nodes:
+    if node in regex_loop_starting:
+      G.nodes[node]["is_start"] = 1
+      G.nodes[node]["start_syscall"] = regex_loop_starting[node]
+    else:
+      G.nodes[node]["is_start"] = 0
+      G.nodes[node]["start_syscall"] = []
+
+    if node in regex_loop_ending:
+      G.nodes[node]["is_end"] = 1
+      G.nodes[node]["end_syscall"] = regex_loop_ending[node]
+    else:
+      G.nodes[node]["is_end"] = 0
+      G.nodes[node]["end_syscall"] = []
+
+    G.nodes[node]["lms"] = node[1]
+  return G
 
 cfg,check_func,not_check_func = log_functions() #Functions having log message strings
 req_func = extract_call_sites(cfg,check_func) #Get parent functions 
@@ -430,6 +647,11 @@ find_loops(cfg, not_check_func) #Function to find starting and ending lms and sy
 build_lms_path(cfg,not_check_func) #Building LMS Graph for each function
 connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentioned
 del_dummy_nodes(new_subgraph) # To do delete fake node and put all in one dictionary
-convert_to_networkx(final_graph)
-print(final_graph)
+
+regex_graph,regex_loop_starting,regex_loop_ending = convert_graph_to_regex() #convert all lms into regex expression
+
+networkxx_graph = convert_to_networkx(regex_graph,regex_loop_starting,regex_loop_ending)
+json_converted = json_graph.node_link_data(networkxx_graph)
+with open("graph.json","w") as outfile:
+  json.dump(json_converted,outfile,indent = 4)
 
