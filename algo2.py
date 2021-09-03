@@ -13,7 +13,7 @@ def load_graph(): #Function to load the graph from json file
 	return G
 
 def load_log(): #Function to load the log file from json file
-	f = open("universal_log.json",)
+	f = open("sample.json",)
 	data = json.load(f)
 
 	# print(data[71110]["pid"])
@@ -127,7 +127,8 @@ lms_state = None #This has to be made a list if trying for multiple applications
 end_unit = 0
 G = []
 #Now interating only for first 20 logs
-for i in range(0,20):
+logs_range = min(10000, len(data))
+for i in range(0,logs_range):
 	print(i)
 	if isAppEntry(data[i]): 
 		if lms_state == None: #if the log is the first log of the application 
@@ -144,27 +145,41 @@ for i in range(0,20):
 			# break
 
 	if end_unit: #if end_unit=1 then we have partiotned the graph so initialize the eventUnit and end_unit
-		lms_pid = data[i]["pid"]
+		lms_pid = str(data[i]["pid"]).strip()
 		if lms_pid not in eventUnit:
-			eventUnit[lms_pid] = set()
-		eventUnit[lms_pid].add(data[i]["lms"])
+			eventUnit[lms_pid] = []
+		eventUnit[lms_pid].append(data[i]["lms"])
 		G.append(eventUnit[lms_pid])
 		end_unit = 0
 		if lms_pid in eventUnit:
 			del eventUnit[lms_pid]
 
 	else: #if not end_unit then add the log event to its corresponding pid
-		if "pid" in data[i]:
-			lms_pid = data[i]["pid"]
-			if lms_pid not in eventUnit:
-				eventUnit[lms_pid] = set()
-			if "lms" in data[i]:
-				eventUnit[lms_pid].add(data[i]["lms"])
-			if "type" in data[i]: #This has to be updated since there is problem with json file
-				eventUnit[lms_pid].add(data[i]["type"])
+		if "data" in data[i]:
+			if "pid" in data[i]["data"]:
+				lms_pid = str(data[i]["data"]["pid"]).strip()
+				if lms_pid not in eventUnit:
+					eventUnit[lms_pid] = []
+				eventUnit[lms_pid].append(str(data[i]["data"]))
 
+		elif "pid" in data[i]:
+			lms_pid = str(data[i]["pid"]).strip()
+			if lms_pid not in eventUnit:
+				eventUnit[lms_pid] = []
+			if "lms" in data[i]:
+				eventUnit[lms_pid].append(data[i]["lms"])
 	# final = time.time_ns()
 	# print(final-initial)
-pp = pprint.PrettyPrinter(indent=4)
-for node in G:
-	pp.pprint(node)
+# print(eventUnit)
+# pp = pprint.PrettyPrinter(indent=4)
+# for node in G:
+# 	pp.pprint(node)
+
+with open("sample_output_eventUnit.json","w") as outfile:
+  json.dump(eventUnit,outfile,indent = 4)
+
+
+with open("sample_output.json","w") as outfile:
+  json.dump(G,outfile,indent = 4)
+
+
