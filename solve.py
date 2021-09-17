@@ -90,6 +90,14 @@ def peephole(cfg,call_sites,max_back_trace):
 
 
 st = proj.factory.entry_state()
+loops_have_syscall = []
+visited = set()
+queue = []
+req_graph = {}
+loops_not_have_syscall = []
+loop_starting = {}
+loop_ending = {}
+
 
 def extract_strings(node,cfg):
   try:
@@ -116,17 +124,10 @@ def extract_strings(node,cfg):
               req_addr = t.address
               yeah = st.memory.load(req_addr,t.size-1)
               temp_string = st.solver.eval(yeah,cast_to=bytes).decode("utf-8")
-              if temp_string in req_strings:
+              if temp_string in req_strings and node.addr not in loops_not_have_syscall:
                 return temp_string
 
   return ''
-
-visited = set()
-queue = []
-req_graph = {}
-loops_not_have_syscall = []
-loop_starting = {}
-loop_ending = {}
 
 syscall_list = {"clone":["clone","clone2","clone3"],
 "close":["close", "fclose", "fcloseall", "pclose", "closedir", "closefrom", "closelog", "close_range"],
@@ -332,7 +333,6 @@ def get_syscall_function_name(function,lvl=4):
 
 def find_loops(cfg,functions):
   function_list = []
-  loops_have_syscall = []
   for function in functions:
     function_list.append(cfg.kb.functions[function])
   loop_object = proj.analyses.LoopFinder(functions = function_list)
@@ -365,8 +365,9 @@ def find_loops(cfg,functions):
     if flag == 0:
       for nodes in loop.body_nodes:
         loops_not_have_syscall.append(nodes.addr)
-    else:
-      loops_have_syscall.append(loop)
+    # if flag == 1:
+    #   for nodes in loop.body_nodes:
+    #     loops_have_syscall.append(nodes.addr)
 
   for loop in loops_list:
     max_block_addr = float('-inf')
