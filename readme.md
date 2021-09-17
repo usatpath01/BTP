@@ -130,3 +130,14 @@ Note: First do testing on "identity" syscall before modifying write syscall
 Note1 : You have to add code in SYSCALL_DEFINE3(write, unsigned int, fd, const char `__user *`, buf, size_t, count) function in read_write.c to modify it furhter.
 
 Note2 : If the OS fails to reboot or is misbehaving. Open grub by pressing esc on boot, go to ```advanced options for ubuntu``` selection kernel version other than 5.8.1,modify the kernel code from inside it.
+________________________________________________________________________________________________
+
+upg_construction have code and sample output for universal provenance graph construction
+
+algo2.py -> implementation of algortihm2
+universal_log.json -> universal log file
+sample.json -> logs extracted from universal_log.json for a particular pid (Only first 100 logs are evaluated)
+sample_ouput.json -> file containing execution units (Note some execution units does not have syscall we ignored them during upg_construction)
+upg.json -> networkxx graph in json format(note if multiple execution units have exactly same data,then only one node is taken )
+
+Testing of correct partioning remaining
