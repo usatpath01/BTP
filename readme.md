@@ -134,10 +134,10 @@ ________________________________________________________________________________
 
 upg_construction have code and sample output for universal provenance graph construction
 
-algo2.py -> implementation of algortihm2
-universal_log.json -> universal log file
-sample.json -> logs extracted from universal_log.json for a particular pid (Only first 100 logs are evaluated)
-sample_ouput.json -> file containing execution units (Note some execution units does not have syscall we ignored them during upg_construction)
-upg.json -> networkxx graph in json format(note if multiple execution units have exactly same data,then only one node is taken )
-
+algo2.py -> implementation of algortihm2  
+universal_log.json -> universal log file  
+sample.json -> logs extracted from universal_log.json for a particular pid (Only first 100 logs are evaluated)  
+sample_ouput.json -> file containing execution units (Note some execution units does not have syscall we ignored them during upg_construction)  
+upg.json -> networkxx graph in json format(note if multiple execution units have exactly same data,then only one node is taken )  
+  
 Testing of correct partioning remaining
