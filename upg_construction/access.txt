@@ -1,0 +1,21 @@
+pid = 5596, date = [1632243168500811592] doing first open system call 1
+pid = 5596, date = [1632243168500976406] done first open system call 1
+pid = 5596, date = [1632243168500995646] doing first some calculation 1
+pid = 5596, date = [1632243168501069223] doing first close system call 1
+pid = 5596, date = [1632243168501170997] done first close system call 1
+pid = 5596, date = [1632243168501200872] doing first open system call 1
+pid = 5596, date = [1632243168501340836] done first open system call 1
+pid = 5596, date = [1632243168501372951] doing first some calculation 1
+pid = 5596, date = [1632243168501413106] doing first close system call 1
+pid = 5596, date = [1632243168501512647] done first close system call 1
+pid = 5596, date = [1632243168501541065] doing first open system call 1
+pid = 5596, date = [1632243168501650880] done first open system call 1
+pid = 5596, date = [1632243168501682238] doing first some calculation 1
+pid = 5596, date = [1632243168501915725] doing first close system call 1
+pid = 5596, date = [1632243168502048005] done first close system call 1
+pid = 5596, date = [1632243168502079363] doing first open system call 1
+pid = 5596, date = [1632243168502207628] done first open system call 1
+pid = 5596, date = [1632243168502237503] doing first some calculation 1
+pid = 5596, date = [1632243168502293513] doing first close system call 1
+pid = 5596, date = [1632243168502375161] done first close system call 1
+pid = 5596, date = [1632243168502401701] completed loop

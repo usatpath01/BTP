@@ -1,17 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<unistd.h>
 void execution_unit1(FILE *fptr)
 {
-	FILE *newfptr;
+	int newfptr;
 	for(int i=1;i<5;i++)
 	{
 		
 		fprintf(fptr, "doing first open system call %d\n",1);
-		newfptr = fopen("lol.txt", "w+");
+		newfptr = open("temp.txt", O_CREAT|O_RDWR);
+		printf("%d",newfptr);
 		fprintf(fptr,"done first open system call %d\n",1);
 		fprintf(fptr,"doing first some calculation %d\n",1);
+		printf("%ld",write(newfptr,"hello",6));
 		fprintf(fptr, "doing first close system call %d\n",1);
-		fclose(newfptr);
+		close(newfptr);
 		fprintf(fptr,"done first close system call %d\n",1);
 	}
 
@@ -53,6 +59,7 @@ void execution_unit3(FILE *fptr)
 
 int main()
 {
+
 	int x;
 	scanf("%d",&x);
 	FILE *fptr = fopen("/var/log/testing/access.txt", "w+");
@@ -64,10 +71,17 @@ int main()
 		return 0;
 	}
 
+	setbuf(fptr, NULL);
+
 	if(x==1)
 		execution_unit1(fptr);
 	if(x==2)
 		execution_unit2(fptr);
 	if(x==3)
 		execution_unit3(fptr);
+
+
+	// while(1){
+	// 	int a=1;
+	// }
 }
