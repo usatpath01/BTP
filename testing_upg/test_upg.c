@@ -7,18 +7,29 @@
 void execution_unit1(FILE *fptr)
 {
 	int newfptr;
+	int intfptr = fileno(fptr);
 	for(int i=1;i<5;i++)
 	{
 		
 		fprintf(fptr, "doing first open system call %d\n",1);
+		if(fsync(intfptr)!=0)
+			printf("error1");
 		newfptr = open("temp.txt", O_CREAT|O_RDWR);
 		printf("%d",newfptr);
 		fprintf(fptr,"done first open system call %d\n",1);
+		if(fsync(intfptr)!=0)
+			printf("error2");
 		fprintf(fptr,"doing first some calculation %d\n",1);
+		if(fsync(intfptr)!=0)
+			printf("error3");
 		printf("%ld",write(newfptr,"hello",6));
 		fprintf(fptr, "doing first close system call %d\n",1);
+		if(fsync(intfptr)!=0)
+			printf("error4");
 		close(newfptr);
 		fprintf(fptr,"done first close system call %d\n",1);
+		if(fsync(intfptr)!=0)
+			printf("error5");
 	}
 
 	fprintf(fptr,"completed loop");
