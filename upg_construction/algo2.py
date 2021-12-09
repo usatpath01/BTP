@@ -6,11 +6,12 @@ import re
 from re import search 
 import pprint
 import time
+from pyvis.network import Network
 
 syscall_cnt = {}
 
 def load_graph(): #Function to load the graph from json file
-	f = open("testing_graph.json",)
+	f = open("graph.json",)
 	data = json.load(f)
 	G = json_graph.node_link_graph(data)
 	return G
@@ -68,7 +69,7 @@ def calculate_rank(string): #Function to find the rank of regex_lms
     return total_words-cnt
 
 def match_lms(lms_cand, lms_graph, lms_state, eventUnit, data):
-	lvl = 8 #lookahead level
+	lvl = 15 #lookahead level
 	final_regex_node = None #if the node having lms is found
 	for dis in range(1,lvl): #iterate for all levels from 1 to lvl
 		nodes = nx.algorithms.descendants_at_distance(lms_graph,lms_state,dis)
@@ -89,7 +90,7 @@ def match_lms(lms_cand, lms_graph, lms_state, eventUnit, data):
 			break
 
 	if final_regex_node!=None: 
-		if lms_graph.nodes[final_regex_node]["is_end"]: #if the found lms is ending lms then set endunit as 1
+		if len(list(lms_graph.successors(final_regex_node)))==0 or lms_graph.nodes[final_regex_node]["is_end"]:	
 			if len(lms_graph.nodes[final_regex_node]["end_syscall"]) == 0:
 				return final_regex_node,1
 
@@ -98,7 +99,7 @@ def match_lms(lms_cand, lms_graph, lms_state, eventUnit, data):
 				syscall_cnt[pid] = len(lms_graph.nodes[node]["end_syscall"])
 				return final_regex_node,0
 
-		else: #else set endunit as 0
+		else:
 			return final_regex_node,0
 
 
@@ -146,7 +147,7 @@ end_unit = 0
 G = []
 net_graph = nx.DiGraph()
 #Now interating only for first 20 logs
-logs_range = min(100, len(data))
+logs_range = len(data)
 for i in range(0,logs_range):
 	print(i)
 	if isAppEntry(data[i]): 
@@ -174,25 +175,64 @@ for i in range(0,logs_range):
 			del eventUnit[lms_pid]
 
 	else: #if not end_unit then add the log event to its corresponding pid
-		if "data" in data[i]:
-			if "pid" in data[i]["data"]:
-				lms_pid = str(data[i]["data"]["pid"]).strip()
-				if lms_pid not in eventUnit:
-					eventUnit[lms_pid] = []
-
-				eventUnit[lms_pid].append(dict(data[i]["data"]))
-				if lms_pid in syscall_cnt and syscall_cnt[lms_pid]>0:
-					syscall_cnt[lms_pid]-=1
-					if syscall_cnt[lms_pid]==0:
-						G.append(eventUnit[lms_pid])
-						del eventUnit[lms_pid]
-
-		elif "pid" in data[i]:
+		# if "data" in data[i]:
+		if "pid" in data[i]:
 			lms_pid = str(data[i]["pid"]).strip()
 			if lms_pid not in eventUnit:
 				eventUnit[lms_pid] = []
-			if "lms" in data[i]:
-				eventUnit[lms_pid].append(data[i]["lms"])
+
+			temp_dict = {}
+			if "exe" in data[i]:
+				temp_dict["exe"] = data[i]["exe"]
+			else:
+				temp_dict["exe"] = None
+
+			if "path_name" in data[i]:
+				temp_dict["path_name"] = data[i]["path_name"]
+			else:
+				temp_dict["path_name"] = None
+
+			if "exe" in data[i]:
+				temp_dict["exe"] = data[i]["exe"]
+			else:
+				temp_dict["exe"] = None
+
+			if "syscall_name" in data[i]:
+				temp_dict["syscall_name"] = data[i]["syscall_name"]
+			else:
+				temp_dict["syscall_name"] = None
+
+			if "syscall_id" in data[i]:
+				temp_dict["syscall_id"] = data[i]["syscall_id"]
+			else:
+				temp_dict["syscall_id"] = None
+
+			temp_dict["pid"] = lms_pid
+
+			if "sock_laddr" in data[i]:
+				temp_dict["sock_laddr"] = data[i]["sock_laddr"]
+			else:
+				temp_dict["sock_laddr"] = None
+
+			if "sock_lport" in data[i]:
+				temp_dict["sock_lport"] = data[i]["sock_lport"]
+			else:
+				temp_dict["sock_lport"] = None
+
+
+			eventUnit[lms_pid].append(temp_dict)
+			if lms_pid in syscall_cnt and syscall_cnt[lms_pid]>0:
+				syscall_cnt[lms_pid]-=1
+				if syscall_cnt[lms_pid]==0:
+					G.append(eventUnit[lms_pid])
+					del eventUnit[lms_pid]
+
+		# elif "pid" in data[i]:
+		# 	lms_pid = str(data[i]["pid"]).strip()
+		# 	if lms_pid not in eventUnit:
+		# 		eventUnit[lms_pid] = []
+		# 	if "lms" in data[i]:
+		# 		eventUnit[lms_pid].append(data[i]["lms"])
 	# final = time.time_ns()
 	# print(final-initial)
 # print(eventUnit)
@@ -203,16 +243,37 @@ for i in range(0,logs_range):
 # with open("sample_output_eventUnit.json","w") as outfile:
 #   json.dump(eventUnit,outfile,indent = 4)
 
-with open("testing_sample_output.json","w") as outfile:
+with open("sample_output.json","w") as outfile:
   json.dump(G,outfile,indent = 4)
 
+partition = 0
 for execution_unit in G:
+	partition+=1
 	for log in execution_unit:
 		if "exe" in log:
-			net_graph.add_edge(log["exe"],str(execution_unit))
+			# net_graph.add_edge(str(log["exe"]),str(log["path_name"]))
+			if "syscall_name" in log:
+				if str(log["syscall_name"]) in ["openat","open","creat","unlink","unlinkat","execve"]:
+					net_graph.add_edge(str(log["exe"])+str(partition),str(log["path_name"]),label = str(log["syscall_name"]))
+				
+				# else if str(log["syscall_name"]) in ["dup","dup2","dup3","close"]:
+
+				# else if str(log["syscall_name"]) in ["exit","exit_group"]:
+				
+				elif str(log["syscall_name"]) in ["connect","bind"]:
+					net_graph.add_edge(str(log["exe"])+str(partition),str(log["sock_laddr"])+" "+str(log["sock_lport"]),label = str(log["syscall_name"]))
+
+				elif str(log["syscall_name"]) in ["accept4","accept"]:
+					net_graph.add_edge(str(log["sock_laddr"])+" "+str(log["sock_lport"]),str(log["exe"])+str(partition),label = str(log["syscall_name"]))
+
 
 json_converted = json_graph.node_link_data(net_graph)
-with open("testing_upg.json","w") as outfile:
+with open("upg.json","w") as outfile:
   json.dump(json_converted,outfile,indent = 4)
 
+
+
+nt = Network('1800px','1200px',directed=True)
+nt.from_nx(net_graph)
+nt.show('provenanceGraph2.html')
 
