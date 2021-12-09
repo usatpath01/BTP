@@ -10,13 +10,13 @@ import time
 syscall_cnt = {}
 
 def load_graph(): #Function to load the graph from json file
-	f = open("graph.json",)
+	f = open("testing_graph.json",)
 	data = json.load(f)
 	G = json_graph.node_link_graph(data)
 	return G
 
 def load_log(): #Function to load the log file from json file
-	f = open("sample.json",)
+	f = open("testing_universal_log.json",)
 	data = json.load(f)
 
 	# print(data[71110]["pid"])
@@ -203,7 +203,7 @@ for i in range(0,logs_range):
 # with open("sample_output_eventUnit.json","w") as outfile:
 #   json.dump(eventUnit,outfile,indent = 4)
 
-with open("sample_output.json","w") as outfile:
+with open("testing_sample_output.json","w") as outfile:
   json.dump(G,outfile,indent = 4)
 
 for execution_unit in G:
@@ -212,7 +212,7 @@ for execution_unit in G:
 			net_graph.add_edge(log["exe"],str(execution_unit))
 
 json_converted = json_graph.node_link_data(net_graph)
-with open("upg.json","w") as outfile:
+with open("testing_upg.json","w") as outfile:
   json.dump(json_converted,outfile,indent = 4)
 
 
