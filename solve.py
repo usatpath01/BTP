@@ -9,13 +9,15 @@ import pprint
 import string
 import itertools
 import networkx as nx
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import json
 from networkx.readwrite import json_graph
 from angrutils import *
+from pyvis.network import Network
+import copy
 
 
-proj = angr.Project("apache2",load_options={'auto_load_libs':False})
+proj = angr.Project("./a.out",load_options={'auto_load_libs':False})
 
 def log_functions():
   check_func = set()
@@ -254,16 +256,42 @@ def build_lms_path(cfg,not_check_func):
     exits.add(max(func_bbs))
     entry =  min(func_bbs)
     graph = entry_func._local_transition_graph
+
+    ########################
+    # if(entry_func.name == "execution_unit1"):
+      # plot_func_graph(proj, graph, "%s_cfg" % (entry_func.name), asminst=True, vexinst=False)
+      # hex_exit = [hex(ele) for ele in exits]
+      # hex_entry = [hex(ele) for ele in entry]
+      # print(hex_exit)
+      # print(hex(entry))
+    
     if graph is None:
       continue
+
     subgraph_graph = create_subgraph(graph,cfg,entry,exits)
+
+    # if(entry_func.name == "execution_unit1"):
+      # print(subgraph_graph)
+    #   test_exe = {}
+    #   temp_temp_temp = []
+    #   for key,val in subgraph_graph.items():
+    #     # test_exe[key] = list(val)
+    #     for ele in val:
+    #       temp_temp_temp.append(str(ele))
+    #     test_exe[str(key)] = temp_temp_temp
+
+      # test_graph = nx.DiGraph(test_exe)
+      # nt = Network('1800px','1200px',directed=True)
+      # nt.from_nx(test_graph)
+      # nt.show('testGraph2.html')
+
     if(len(subgraph_graph)>0):
       exit_graph_tuple = (exits,subgraph_graph)
       subgraph_dict[entry_func.addr] = exit_graph_tuple
 
 
 new_subgraph = {}
-final_graph = {}
+# final_graph = {}
 def connect_subgraph(subgraph_dict,cfg):
   key_subgraph_dict = list(subgraph_dict.keys())
   for func_addr in subgraph_dict:
@@ -295,21 +323,60 @@ def find_predecessors(new_subgraph,del_node,successors):
             new_subgraph[ele].add(succ)
 
 def del_dummy_nodes(new_subgraph):
-  for node in new_subgraph:
+  # for node in new_subgraph:
+  #   addr,string = node
+  #   if len(string)==0:
+  #     successors = new_subgraph[node]
+  #     predecessors = find_predecessors(new_subgraph,node,successors)
+  # for node in new_subgraph:
+  #   addr,string = node
+  #   if len(string)!=0:
+  #     final_graph[node] = new_subgraph[node]
+  # for nodes in final_graph:
+  #   temp = final_graph[nodes].copy()
+  #   for node in temp:
+  #     addr,string = node
+  #     if(len(string)==0):
+  #       final_graph[nodes].remove(node)
+
+  final_graph = copy.deepcopy(new_subgraph) 
+  print(final_graph)
+  net_new_subgraph =  nx.DiGraph(new_subgraph)
+  subgraph_nodes = net_new_subgraph.nodes
+  # print(type(subgraph_nodes))
+  for node in list(subgraph_nodes):
+    # print(type(node))
     addr,string = node
     if len(string)==0:
-      successors = new_subgraph[node]
-      predecessors = find_predecessors(new_subgraph,node,successors)
-  for node in new_subgraph:
-    addr,string = node
-    if len(string)!=0:
-      final_graph[node] = new_subgraph[node]
+      successors = net_new_subgraph.successors(node)
+      predecessors = net_new_subgraph.predecessors(node)
+      for ele in predecessors:
+        for succ in successors:
+          if ele!=node and succ!=node:
+            final_graph[ele].add(succ)
+            net_new_subgraph.add_edge(ele,succ)
+
+      if node in final_graph:
+        net_new_subgraph.remove_node(node)
+        del final_graph[node]
+
+  # final_graph_nodes = list(final_graph.keys())
+  # for node in final_graph_nodes:
+  #   addr,string = node
+  #   if(len(string)==0):
+  #     del final_graph[node]
+
+  # print(final_graph)
+
   for nodes in final_graph:
     temp = final_graph[nodes].copy()
     for node in temp:
       addr,string = node
       if(len(string)==0):
         final_graph[nodes].remove(node)
+
+  # print(final_graph)
+  return final_graph
 
 def get_syscall_function_name(function,lvl=4):
   function_names = []
@@ -595,7 +662,7 @@ def build_regex_from_lms(i):
     return given_string
 
 
-def convert_graph_to_regex():
+def convert_graph_to_regex(final_graph):
 
   regex_graph = {}
   regex_loop_starting = {}
@@ -642,17 +709,18 @@ def convert_to_networkx(graph,regex_loop_starting,regex_loop_ending):
   return G
 
 cfg,check_func,not_check_func = log_functions() #Functions having log message strings
+# plot_cfg(cfg,"test_cfg", remove_imports=True, remove_path_terminator=True)
 req_func = extract_call_sites(cfg,check_func) #Get parent functions 
 req_strings = peephole(cfg,req_func,3) #Use peephole to find all log message strings
 find_loops(cfg, not_check_func) #Function to find starting and ending lms and syscall after ending lms or before starting lms
 build_lms_path(cfg,not_check_func) #Building LMS Graph for each function
 connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentioned
-del_dummy_nodes(new_subgraph) # To do delete fake node and put all in one dictionary
-
-regex_graph,regex_loop_starting,regex_loop_ending = convert_graph_to_regex() #convert all lms into regex expression
+# print(new_subgraph)
+final_graph = del_dummy_nodes(new_subgraph) # To do delete fake node and put all in one dictionary
+# print(final_graph)
+regex_graph,regex_loop_starting,regex_loop_ending = convert_graph_to_regex(final_graph) #convert all lms into regex expression
 
 networkxx_graph = convert_to_networkx(regex_graph,regex_loop_starting,regex_loop_ending)
 json_converted = json_graph.node_link_data(networkxx_graph)
 with open("graph.json","w") as outfile:
   json.dump(json_converted,outfile,indent = 4)
-
