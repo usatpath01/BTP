@@ -34,7 +34,7 @@ except TypeError:
     print(D3.get("lms"))
     pass
 pprint.pprint(newlist)
-with open('testing_universal_log.json', 'a') as f:
+with open('universal_log.json', 'a') as f:
     f.truncate()
     json.dump(newlist, f, indent=2)  
 print("------Sorting Completed and dumped to file-----")

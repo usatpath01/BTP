@@ -1,0 +1,186 @@
+[
+    [
+        {
+            "exe": "/bin/bash",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/bin/bash",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "59",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "doing first open system call 1",
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "done first open system call 1",
+        "doing first some calculation 1",
+        "doing first close system call 1",
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "done first close system call 1"
+    ],
+    [
+        "doing first open system call 2",
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "done first open system call 2",
+        "doing first some calculation 2",
+        "doing first close system call 2",
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "done first close system call 2"
+    ],
+    [
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "doing first open system call 3",
+        "done first open system call 3",
+        "doing first some calculation 3",
+        "doing first close system call 3",
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "done first close system call 3"
+    ],
+    [
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "257",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "doing first open system call 4",
+        "done first open system call 4",
+        "doing first some calculation 4",
+        "doing first close system call 4",
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "3",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "done first close system call 4"
+    ],
+    [
+        {
+            "exe": "/home/aaru/test_app/a.out",
+            "path_name": null,
+            "syscall_name": null,
+            "syscall_id": "231",
+            "pid": "5549",
+            "sock_laddr": null,
+            "sock_lport": null
+        },
+        "completed loop"
+    ]
+]

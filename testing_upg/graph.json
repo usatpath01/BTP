@@ -1,0 +1,148 @@
+{
+    "directed": true,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "is_start": 0,
+            "start_syscall": [],
+            "is_end": 0,
+            "end_syscall": [],
+            "lms": "completed loop",
+            "id": [
+                4196767,
+                "completed loop"
+            ]
+        },
+        {
+            "is_start": 1,
+            "start_syscall": [],
+            "is_end": 0,
+            "end_syscall": [],
+            "lms": "doing first open system call -?[0-9]+",
+            "size": 10,
+            "id": [
+                4196523,
+                "doing first open system call -?[0-9]+"
+            ]
+        },
+        {
+            "is_start": 0,
+            "start_syscall": [],
+            "is_end": 0,
+            "end_syscall": [],
+            "lms": "temp\\.txt",
+            "size": 10,
+            "id": [
+                4196560,
+                "temp\\.txt"
+            ]
+        },
+        {
+            "is_start": 0,
+            "start_syscall": [],
+            "is_end": 0,
+            "end_syscall": [],
+            "lms": "done first open system call -?[0-9]+",
+            "id": [
+                4196595,
+                "done first open system call -?[0-9]+"
+            ]
+        },
+        {
+            "is_start": 0,
+            "start_syscall": [],
+            "is_end": 0,
+            "end_syscall": [],
+            "lms": "doing first some calculation -?[0-9]+",
+            "id": [
+                4196622,
+                "doing first some calculation -?[0-9]+"
+            ]
+        },
+        {
+            "is_start": 0,
+            "start_syscall": [],
+            "is_end": 0,
+            "end_syscall": [],
+            "lms": "doing first close system call -?[0-9]+",
+            "id": [
+                4196659,
+                "doing first close system call -?[0-9]+"
+            ]
+        },
+        {
+            "is_start": 0,
+            "start_syscall": [],
+            "is_end": 1,
+            "end_syscall": [],
+            "lms": "done first close system call -?[0-9]+",
+            "id": [
+                4196716,
+                "done first close system call -?[0-9]+"
+            ]
+        }
+    ],
+    "links": [
+        {
+            "source": [
+                4196523,
+                "doing first open system call -?[0-9]+"
+            ],
+            "target": [
+                4196560,
+                "temp\\.txt"
+            ]
+        },
+        {
+            "source": [
+                4196560,
+                "temp\\.txt"
+            ],
+            "target": [
+                4196595,
+                "done first open system call -?[0-9]+"
+            ]
+        },
+        {
+            "source": [
+                4196595,
+                "done first open system call -?[0-9]+"
+            ],
+            "target": [
+                4196622,
+                "doing first some calculation -?[0-9]+"
+            ]
+        },
+        {
+            "source": [
+                4196622,
+                "doing first some calculation -?[0-9]+"
+            ],
+            "target": [
+                4196659,
+                "doing first close system call -?[0-9]+"
+            ]
+        },
+        {
+            "source": [
+                4196659,
+                "doing first close system call -?[0-9]+"
+            ],
+            "target": [
+                4196716,
+                "done first close system call -?[0-9]+"
+            ]
+        },
+        {
+            "source": [
+                4196716,
+                "done first close system call -?[0-9]+"
+            ],
+            "target": [
+                4196767,
+                "completed loop"
+            ]
+        }
+    ]
+}
