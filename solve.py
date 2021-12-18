@@ -15,10 +15,16 @@ from networkx.readwrite import json_graph
 from angrutils import *
 from pyvis.network import Network
 import copy
-
-
-proj = angr.Project("./a.out",load_options={'auto_load_libs':False})
-
+##################################################################################################
+import argparse
+parser = argparse.ArgumentParser(prog='python3 solve.py', usage='%(prog)s [options]')
+parser.add_argument('-V', dest='visualize', help='Use this flag for visualizing the graph',action="store_true")
+parser.add_argument('--exe', dest='exe', nargs='+', default="./a.out", help='Provide the executable file location')
+parser.parse_args([])
+args = parser.parse_args()
+##################################################################################################
+proj = angr.Project(args.exe[0],load_options={'auto_load_libs':False})
+##################################################################################################
 def log_functions():
   check_func = set()
   not_check_func = set()
@@ -660,8 +666,39 @@ def build_regex_from_lms(i):
     given_string = re.sub("%l", regex_for_int, given_string)
 
     return given_string
+##################################################################################################
+# For visualization use only
+def convert_graph_to_regexV(final_graph):
 
+  regex_graph = {}
+  regex_loop_starting = {}
+  regex_loop_ending = {}
 
+  for node in final_graph:
+    #OLd line below
+    #new_node = (node[0],build_regex_from_lms(node[1]))
+    #Edit to make the node id as an sring 
+    new_node = str(node[0]) + ":" + str(build_regex_from_lms(node[1]))
+    regex_graph[new_node] = set()
+    for edge in final_graph[node]:
+      #new_edge = (edge[0],build_regex_from_lms(edge[1]))
+      new_edge = str(edge[0]) + ":" + str(build_regex_from_lms(edge[1]))
+      regex_graph[new_node].add(new_edge)
+
+  for node in loop_starting:
+    # new_node = (node[0],build_regex_from_lms(node[1]))
+    new_node = str(node[0]) + ":" +str(build_regex_from_lms(node[1]))
+    regex_loop_starting[new_node] = loop_starting[node]
+
+  for node in loop_ending:
+    # new_node = (node[0],build_regex_from_lms(node[1]))
+    new_node = str(node[0]) + ":" + str(build_regex_from_lms(node[1]))
+    regex_loop_ending[new_node] = loop_ending[node]
+  return regex_graph,regex_loop_starting,regex_loop_ending
+##################################################################################################
+
+  
+  
 def convert_graph_to_regex(final_graph):
 
   regex_graph = {}
@@ -718,6 +755,20 @@ connect_subgraph(subgraph_dict,cfg) #Connect subgraphs with each other as mentio
 # print(new_subgraph)
 final_graph = del_dummy_nodes(new_subgraph) # To do delete fake node and put all in one dictionary
 # print(final_graph)
+##################################################################################################
+# Generate a graph for visualization
+if args.visualize:
+    visual_graph,_,_ = convert_graph_to_regexV(final_graph) #convert all lms into regex expression    
+    V = nx.DiGraph(visual_graph)
+    try:
+        nt = Network('1800px','1200px',directed=True)
+        nt.show_buttons(filter_=['physics'])
+        nt.repulsion(central_gravity=0)
+        nt.from_nx(V)
+        nt.show('lms_control_flow_graph.html')
+    except:
+        pass
+##################################################################################################
 regex_graph,regex_loop_starting,regex_loop_ending = convert_graph_to_regex(final_graph) #convert all lms into regex expression
 
 networkxx_graph = convert_to_networkx(regex_graph,regex_loop_starting,regex_loop_ending)
