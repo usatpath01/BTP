@@ -1,20 +1,23 @@
-import angr
-import claripy
-import sys
-import pickle
-import pyvex
-import re
+import pip
+def tryImport(packages):
+	''' If import error, then install the module '''
+	for package in packages:
+		try:
+			__import__(package)
+		except ImportError:
+			pip.main(['install', package])
+	return
+##################################################################################################
+tryImport(['angr','claripy','sys', 'pickle', 'pyvex', 're', 'itertools','pprint', 'string', 'itertools', 'json', 'networkx', 'pyvis', 'copy', 'angr-utils'])
+
+import angr, claripy, sys, pickle, pyvex, re, pprint, string, itertools, json, pyvis, copy
+
 from re import search
-import pprint
-import string
-import itertools
 import networkx as nx
 # import matplotlib.pyplot as plt
-import json
 from networkx.readwrite import json_graph
 from angrutils import *
 from pyvis.network import Network
-import copy
 ##################################################################################################
 import argparse
 parser = argparse.ArgumentParser(prog='python3 solve.py', usage='%(prog)s [options]')
