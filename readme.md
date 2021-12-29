@@ -132,12 +132,14 @@ Note1 : You have to add code in SYSCALL_DEFINE3(write, unsigned int, fd, const c
 Note2 : If the OS fails to reboot or is misbehaving. Open grub by pressing esc on boot, go to ```advanced options for ubuntu``` selection kernel version other than 5.8.1,modify the kernel code from inside it.
 ________________________________________________________________________________________________
 
-upg_construction have code and sample output for universal provenance graph construction
+kernel_programming : It consists of modified kernel that appends pid and timestamp to application logs  
 
-algo2.py -> implementation of algortihm2  
-universal_log.json -> universal log file  
-sample.json -> logs extracted from universal_log.json for a particular pid (Only first 100 logs are evaluated)  
-sample_ouput.json -> file containing execution units (Note some execution units does not have syscall we ignored them during upg_construction)  
-upg.json -> networkxx graph in json format(note if multiple execution units have exactly same data,then only one node is taken )  
-  
-Testing of correct partioning remaining
+modified_lkm : It consists of lkm that appends pid and timestamp to application logs  
+
+testing_upg,upg_construction : It consists of ouput given by the alog2.py for a simple C prgramm.  
+
+The main files and folders are: 
+solve.py, testing_upg/algo2.py, testing_upg/gen.py, testing_upg/parsetojson.py, testing_upg/sort_log_files.py, testing_upg/universal_log_gen_v4.py, modified_lkm 
+
+
+
